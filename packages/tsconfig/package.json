@@ -1,0 +1,11 @@
+{
+  "name": "@r2-hls/tsconfig",
+  "version": "0.0.1",
+  "description": "Shared TypeScript base configs for the monorepo",
+  "private": true,
+  "license": "MIT",
+  "files": [
+    "base.json",
+    "nestjs.json"
+  ]
+}

@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Turborepo
+.turbo
+
+# Build outputs
+dist
+build
+
+# Testing
+coverage
+
+# Environment — only the examples are committed
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Cloudflare
+.wrangler
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+*.pem
+service-account.json
