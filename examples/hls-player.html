@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HLS Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d1117;
+        --panel: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #2f81f7;
+        --ok: #3fb950;
+        --err: #f85149;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        padding: 24px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 480px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 16px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      button {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      .player {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 9 / 16;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+      }
+      .meta {
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+        word-break: break-all;
+      }
+      .status {
+        margin-top: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .status.ok {
+        color: var(--ok);
+      }
+      .status.err {
+        color: var(--err);
+      }
+      .levels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .levels button {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-weight: 500;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .levels button.active {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>HLS Player</h1>
+
+      <div class="row">
+        <input
+          id="url"
+          type="text"
+          placeholder="paste the signed master.m3u8 URL"
+        />
+        <button id="load">Load</button>
+      </div>
+
+      <div class="player">
+        <video id="video" controls playsinline muted></video>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="levels" id="levels"></div>
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <script>
+      const video = document.getElementById('video');
+      const urlInput = document.getElementById('url');
+      const statusEl = document.getElementById('status');
+      const metaEl = document.getElementById('meta');
+      const levelsEl = document.getElementById('levels');
+      let hls = null;
+
+      function setStatus(msg, kind) {
+        statusEl.textContent = msg;
+        statusEl.className = 'status' + (kind ? ' ' + kind : '');
+      }
+
+      function clearLevels() {
+        levelsEl.innerHTML = '';
+      }
+
+      function renderLevels(levels, current) {
+        clearLevels();
+        if (!levels || levels.length < 2) return;
+
+        const auto = document.createElement('button');
+        auto.textContent = 'Auto';
+        auto.className = current === -1 ? 'active' : '';
+        auto.onclick = () => {
+          hls.currentLevel = -1;
+        };
+        levelsEl.appendChild(auto);
+
+        levels.forEach((lvl, i) => {
+          const b = document.createElement('button');
+          b.textContent = (lvl.height || '?') + 'p';
+          b.className = i === current ? 'active' : '';
+          b.onclick = () => {
+            hls.currentLevel = i;
+          };
+          levelsEl.appendChild(b);
+        });
+      }
+
+      function load(url) {
+        if (!url) return;
+        clearLevels();
+        metaEl.textContent = '';
+
+        if (hls) {
+          hls.destroy();
+          hls = null;
+        }
+        video.removeAttribute('src');
+        video.load();
+
+        const t0 = performance.now();
+
+        // Safari / iOS: native HLS
+        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = url;
+          video.addEventListener(
+            'loadedmetadata',
+            () => {
+              setStatus('Playing (native HLS)', 'ok');
+              video.play().catch(() => {});
+            },
+            { once: true },
+          );
+          video.addEventListener(
+            'error',
+            () => setStatus('Failed to load (native)', 'err'),
+            { once: true },
+          );
+          return;
+        }
+
+        if (!window.Hls || !Hls.isSupported()) {
+          setStatus('hls.js is not supported in this browser', 'err');
+          return;
+        }
+
+        setStatus('Loading…');
+        hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (_e, data) => {
+          const ms = Math.round(performance.now() - t0);
+          setStatus('Manifest OK — playing', 'ok');
+          metaEl.textContent =
+            data.levels.length +
+            ' variant(s): ' +
+            data.levels.map((l) => (l.height || '?') + 'p').join(', ') +
+            ' · manifest in ' +
+            ms +
+            'ms';
+          renderLevels(data.levels, hls.currentLevel);
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+          renderLevels(hls.levels, data.level);
+        });
+
+        hls.on(Hls.Events.ERROR, (_e, data) => {
+          if (data.fatal) {
+            setStatus(
+              'Fatal error: ' + data.type + ' / ' + data.details,
+              'err',
+            );
+          }
+        });
+      }
+
+      document.getElementById('load').onclick = () => load(urlInput.value.trim());
+      window.addEventListener('DOMContentLoaded', () => load(urlInput.value.trim()));
+    </script>
+  </body>
+</html>
