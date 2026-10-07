@@ -1,0 +1,21 @@
+{
+  "name": "@r2-hls/contracts",
+  "version": "0.0.1",
+  "description": "Framework-agnostic shared contracts: media domain, ports, queue identity, HLS delivery. Single source of truth between api and worker.",
+  "private": true,
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@r2-hls/tsconfig": "workspace:*",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}
