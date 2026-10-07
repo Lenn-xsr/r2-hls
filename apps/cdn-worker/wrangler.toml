@@ -1,0 +1,14 @@
+name = "r2-hls-cdn"
+main = "src/worker.ts"
+compatibility_date = "2026-01-19"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "your-bucket-name"
+
+# Secrets — set them with `wrangler secret put <NAME>` (never commit values):
+# - HLS_TOKEN_SECRET   (required) HLS prefix tokens for /v/*   — must match the API
+# - SIGNED_URL_SECRET  (required) per-file signed URLs for /private/* — must match the API
+#
+# Optional plain variable:
+# - ALLOWED_ORIGINS    comma-separated CORS allow-list (default: any origin)
