@@ -1,0 +1,17 @@
+# Local dependencies for the api and the worker.
+# R2 and the cdn-worker are Cloudflare services and are not emulated here.
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+
+volumes:
+  mongo-data:

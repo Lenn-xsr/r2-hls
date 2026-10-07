@@ -1,0 +1,23 @@
+# Dependencies and build output are recreated inside the image
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+
+# Local configuration and secrets
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+
+# Not needed to build
+**/.git
+**/.github
+**/.vscode
+**/.idea
+**/*.md
+**/Dockerfile
+**/.dockerignore
+docker-compose.ymlexamples
